@@ -1,0 +1,63 @@
+<div class="page-header header-filter clear-filter purple-filter" data-parallax="true"">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 ml-auto mr-auto">
+                <div class="brand">
+                    <h2>Assignment 2</h2>
+                    <h3>Part 2</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="main main-raised">
+    <div class="section section-basic">
+        <div class="container">
+            <div class="title">
+                <h2>Weather data</h2>
+            </div>
+            <div>
+                <table id="table" class="table table-striped table-bordered">
+                    <thead>
+                    <tr>
+                        <th>Place</th>
+                        <th>From - to</th>
+                        <th>Unit</th>
+                        <th>Time</th>
+                        <th>Type</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{#each this}}
+                        <tr>
+                            <td class = "hello">{{place}}</td>
+                            <td>{{from}}-{{to}}</td>
+                            <td>{{unit}}</td>
+                            <td>{{time}}</td>
+                            <td>{{type}}</td>
+                        </tr>
+                    {{/each}}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.18/datatables.min.js"></script>
+<script>
+    $(document).ready(function () {
+        var table = $('#table').dataTable({
+            'columnDefs': [
+                {'className': 'dt-center', 'targets': '_all'}
+            ],
+            'pageLength' : {{requiredRows}},
+            'ordering' : false,
+            'searching' : false,
+            'lengthChange' : false,
+
+        });
+        table.fnPageChange({{startIndex}}-1,true);
+    });
+</script>
+
