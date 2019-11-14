@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const fetch = require('node-fetch');
+const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const URL = 'http://localhost:8080';
 
 /**
@@ -24,10 +25,12 @@ const fetchPredictions = async (URL) => {
     const data = await api_call.json();
     return {data};
 };
+
+
 /**
  * Function consuming get requests on URL '/' , sending JSON to the view and rendering the view
  */
-
+// WITH Promises -> Resolution of the promise is implemented in .then()
 router.get('/', function (req, res) {
 
     let dataToSend = [];
@@ -43,89 +46,136 @@ router.get('/', function (req, res) {
 
             }),
         };
-        const latestTemperature = dataToSend.result.filter(_=> _.type==='temperature')[0];
+        let pastData = histData(dataToSend);
+
+        fetchPredictions(`${URL}/forecast/Horsens`).then(result => {
+            dataToSend2 = {
+                result: result.data.sort((a, b) => {
+                    return (a.time < b.time) - (a.time > b.time);
+                })
+            };
+            let forecasts = predictions(dataToSend2);
+            console.log({forecasts});
+            res.render('index',{pastData,forecasts});
+        });
+    });
+    //This is the XMLHttpRequest part bellow, does the same thing.
+    /*const request = new XMLHttpRequest();
+    request.open('GET','http://localhost:8080/data/Horsens');
+    request.onload = () =>{
+        const response = JSON.parse(request.responseText);
+        dataToSend = {
+            result : response.sort((a, b) => {
+                return (a.time < b.time) - (a.time > b.time);
+
+            }),
+        };
+        const pastData = histData(dataToSend);
+        console.log(pastData);
+        res.render('index',{pastData});
+    }
+    request.send()*/
+
+});
+
+const predictions = (dataToSend) =>{
+
+    const hourlyPredictions = () =>{
+        const oneDayBack = new Date();
+        oneDayBack.setDate(oneDayBack.getDate() + 1);
+        return dataToSend.result.filter(_ => new Date(_.time).valueOf() <= oneDayBack.valueOf())
+    };
+    const output = hourlyPredictions();
+    return output;
+
+}
+
+
+const histData = (dataToSend) => {
+
+    const latestAll = () =>{
+        const latestTemperature  = dataToSend.result.filter(_=> _.type==='temperature')[0];
         const latestWind = dataToSend.result.filter(_=> _.type==='wind speed')[0];
         const latestPrec = dataToSend.result.filter(_=> _.type==='precipitation')[0];
         const latestCloud = dataToSend.result.filter(_=> _.type==='cloud coverage')[0];
 
-        const minimumTemperatureForFiveDays = () => {
-            const fiveDaysAgo = new Date();
-            fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-            return result.data.filter(_ => _.type === 'temperature').filter(_ => new Date(_.time).valueOf() >= fiveDaysAgo.valueOf()).sort((a, b) => a.value - b.value)[0]
-        };
-        const maximumTemperatureForFiveDays = () => {
-            const fiveDaysAgo = new Date();
-            fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-            return result.data.filter(_ => _.type === 'temperature').filter(_ => new Date(_.time).valueOf() >= fiveDaysAgo.valueOf()).sort((a, b) => b.value - a.value)[0]
-        };
-        const totalPrecipitationForFiveDays = () =>{
-            const fiveDaysAgo = new Date();
-            fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-            return result.data.filter(_ => _.type === 'precipitation').filter(_ => new Date(_.time).valueOf()>= fiveDaysAgo.valueOf()).map(_ => _.value).reduce((a,b)=>a+b);
+        return {
+            latestTemperature,
+            latestPrec,
+            latestWind,
+            latestCloud
+        }
 
-        };
-        const averageWindSpeedForFiveDays = () =>{
-            const fiveDaysAgo = new Date();
-            fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-            const windDataFor5Days =  result.data.filter(_ => _.type === 'wind speed').filter(_ => new Date(_.time).valueOf()>= fiveDaysAgo.valueOf()).map(_ => _.value);
-            return windDataFor5Days.reduce((a,b)=>a+b)/ windDataFor5Days.length;
+    }
 
-        };
-        const averageCloudsForFiveDays = () =>{
-            const fiveDaysAgo = new Date();
-            fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-            const cloudDataFor5Days =  result.data.filter(_ => _.type === 'cloud coverage').filter(_ => new Date(_.time).valueOf()>= fiveDaysAgo.valueOf()).map(_ => _.value);
-            return cloudDataFor5Days.reduce((a,b)=>a+b)/ cloudDataFor5Days.length;
+    const minimumTemperatureForFiveDays = () => {
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+        const minimumTemp = dataToSend.result.filter(_ => _.type === 'temperature').filter(_ => new Date(_.time).valueOf() >= fiveDaysAgo.valueOf()).sort((a, b) => a.value - b.value)[0]
+        return {minimumTemp}
+    };
+    const maximumTemperatureForFiveDays = () => {
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+        const maximumTemp= dataToSend.result.filter(_ => _.type === 'temperature').filter(_ => new Date(_.time).valueOf() >= fiveDaysAgo.valueOf()).sort((a, b) => b.value - a.value)[0];
+        return {maximumTemp}
+    };
+    const totalPrecipitationForFiveDays = () =>{
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+        const totalPrec = dataToSend.result.filter(_ => _.type === 'precipitation').filter(_ => new Date(_.time).valueOf()>= fiveDaysAgo.valueOf()).map(_ => _.value).reduce((a,b)=>a+b);
+        return {totalPrec}
 
-        };
-        const dominantWindDirection = () => {
-            const fiveDaysAgo = new Date();
-            fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-            const allWinds = result.data.filter(_ => _.type === 'wind speed').filter(_ => new Date(_.time).valueOf() >= fiveDaysAgo.valueOf())
-            const north = allWinds.filter(_ =>_.direction=='North').length;
-            const south = allWinds.filter(_ =>_.direction=='South').length;
-            const east = allWinds.filter(_ =>_.direction=='East').length;
-            const west = allWinds.filter(_ =>_.direction=='West').length;
+    };
+    const averageWindSpeedForFiveDays = () =>{
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+        const windDataFor5Days =  dataToSend.result.filter(_ => _.type === 'wind speed').filter(_ => new Date(_.time).valueOf()>= fiveDaysAgo.valueOf()).map(_ => _.value);
+        const avgWind = windDataFor5Days.reduce((a,b)=>a+b)/ windDataFor5Days.length;
+        return {avgWind}
 
-            //console.log(allWinds);
-            function mapToProp(data,prop){
-            return data.reduce((res, item) =>
-                Object.assign(res, {
-                    name : item[prop],
-                    count: 1 + (res[item[prop]] || 0)
-                }), Object.create(null));
+    };
+    const averageCloudsForFiveDays = () =>{
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+        const cloudDataFor5Days =  dataToSend.result.filter(_ => _.type === 'cloud coverage').filter(_ => new Date(_.time).valueOf()>= fiveDaysAgo.valueOf()).map(_ => _.value);
+        const avgCloud = cloudDataFor5Days.reduce((a,b)=>a+b)/ cloudDataFor5Days.length;
+        return {avgCloud}
+
+    };
+    const dominantWindDirection = () => {
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+        const allWinds = dataToSend.result.filter(_ => _.type === 'wind speed').filter(_ => new Date(_.time)
+            .valueOf() >= fiveDaysAgo.valueOf()).map(_ => _.direction)
+        const directionsMap = {};
+        allWinds.forEach(direction => {
+            if(directionsMap[direction] >=0){
+                directionsMap[direction]++
+            } else{
+                directionsMap[direction] = 0
             }
+        });
+        let dominantWind ='';
+        for(var item in directionsMap){
+            let currentDominantDirection = directionsMap[dominantWind]
+            if(!currentDominantDirection)
+                currentDominantDirection = 0;
+            if (directionsMap[item]> currentDominantDirection)
+                dominantWind = item;
+        }
 
-            console.log(mapToProp(allWinds,'direction'))
-        };
-        console.log(totalPrecipitationForFiveDays());
-        console.log(minimumTemperatureForFiveDays());
-        console.log(maximumTemperatureForFiveDays());
-        console.log(averageWindSpeedForFiveDays());
-        console.log(averageCloudsForFiveDays());
-
-        const output = totalPrecipitationForFiveDays();
-        return output;
-    });
-
-    const druheData = () =>fetchPredictions(`${URL}/forecast/Horsens`).then(result => {
-        dataToSend = {
-            result: result.data.sort((a, b) => {
-                return (a.time < b.time) - (a.time > b.time);
-
-            })
-        };
-        const hourlyPredictions = () =>{
-            const oneDayBack = new Date();
-            oneDayBack.setDate(oneDayBack.getDate() + 1);
-            return result.data.filter(_ => new Date(_.time).valueOf() <= oneDayBack.valueOf())
-        };
-        const output = hourlyPredictions();
-        return output;
-    });
-    const celkoveData = [prveData(),druheData()]
-    console.log('Toto su celkove data  : '+celkoveData)
-    res.render('index',celkoveData);
-});
+        return {dominantWind}
+    };
+    return [
+        latestAll(),
+        minimumTemperatureForFiveDays(),
+        maximumTemperatureForFiveDays(),
+        totalPrecipitationForFiveDays(),
+        averageWindSpeedForFiveDays(),
+        dominantWindDirection(),
+        averageCloudsForFiveDays()
+        ]
+};
 //Module export that defines how to locate this
 module.exports = router;
