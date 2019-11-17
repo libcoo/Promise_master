@@ -4,6 +4,8 @@ const router = express.Router();
 const fetch = require('node-fetch');
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const URL = 'http://localhost:8080';
+const WeatherStore =require('../assignment3/Store');
+const actions = require('../assignment3/Actions');
 
 /**
  * Function fetching data from API
@@ -26,20 +28,16 @@ const fetchPredictions = async (URL) => {
     return {data};
 };
 
-
 /**
  * Function consuming get requests on URL '/' , sending JSON to the view and rendering the view
  */
 // WITH Promises -> Resolution of the promise is implemented in .then()
 router.get('/', function (req, res) {
 
-    let dataToSend = [];
+    /**let dataToSend = [];
 
     fetchData (`${URL}/data/Horsens`).then(result => {
         dataToSend = {
-            //Data that are gotten from query parameters (Always specifying defaults)
-            //requiredRows: req.query.rows || '25',
-            //startIndex: req.query.startIndex || 1,
             //Actual data from the promise that are sorted right away based on query parameter sortBy
             result: result.data.sort((a, b) => {
                 return (a.time < b.time) - (a.time > b.time);
@@ -58,7 +56,8 @@ router.get('/', function (req, res) {
             console.log({forecasts});
             res.render('index',{pastData,forecasts});
         });
-    });
+    });**/
+    res.render('index',WeatherStore.getAll())
     //This is the XMLHttpRequest part bellow, does the same thing.
     /*const request = new XMLHttpRequest();
     request.open('GET','http://localhost:8080/data/Horsens');
