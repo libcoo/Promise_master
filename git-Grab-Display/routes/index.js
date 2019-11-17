@@ -34,7 +34,7 @@ const fetchPredictions = async (URL) => {
 // WITH Promises -> Resolution of the promise is implemented in .then()
 router.get('/', function (req, res) {
 
-    /**let dataToSend = [];
+    let dataToSend = [];
 
     fetchData (`${URL}/data/Horsens`).then(result => {
         dataToSend = {
@@ -54,9 +54,10 @@ router.get('/', function (req, res) {
             };
             let forecasts = predictions(dataToSend2);
             console.log({forecasts});
-            res.render('index',{pastData,forecasts});
+            res.render('excercise_2_test',{pastData,forecasts});
         });
-    });**/
+    });
+    /*
     res.render('index',WeatherStore.getAll())
     //This is the XMLHttpRequest part bellow, does the same thing.
     /*const request = new XMLHttpRequest();

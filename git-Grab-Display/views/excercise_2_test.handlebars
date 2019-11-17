@@ -1,0 +1,38 @@
+<h1>Using fetch with promises</h1>
+<div>
+
+
+    <button ng-click="weatherCon.reload()" id="button-reload">reload</button>
+    <label>city</label>
+    <input type="text" id="input-city">
+    <label>from</label>
+    <input type="date" id="input-date-start">
+    <label>to</label>
+    <input type="date" id="input-date-end">
+
+</div>
+
+<div>
+    <h4>Add weather data</h4>
+    <form ng-submit="weatherCon.addData()">
+        <input type="text" placeholder="Place" ng-model="weatherCon.place">
+        <input type="datetime-local" placeholder="Date" ng-model="weatherCon.dateTime">
+        <input type="number" placeholder="Value" ng-model="weatherCon.value">
+        <input type="text" placeholder="unit" ng-model="dirList.unit">
+        <input type="text" placeholder="type" ng-model="dirList.type">
+        <input type="submit" value="Submit">
+    </form>
+</div>
+
+
+<input type="text" ng-model="search">
+<table>
+    <ul>
+        <li nq-repeat="item in weatherCon.list | filter:search">
+        </li>
+    </ul>
+</table>
+
+<h2>Hourly predictions for the next 24 hours.</h2>
+
+
